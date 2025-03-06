@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {/* Your page content goes here */}
+        <h1 className="text-3xl font-bold mb-6 text-red-500">Welcome to Our Store</h1>
+        <p className="mb-4">This is a sample page to demonstrate the responsive header and footer.</p>
+        <div className="bg-gray-100 p-8 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">Featured Products</h2>
+          <p>Your products would be displayed here.</p>
+          <p class="text-red-500">This is red text.</p>
+          <p class="text-blue-700">This is blue text.</p>
+          <p class="text-green-600">This is green text.</p>
+          <p class="text-yellow-500">This is yellow text.</p>
+          <p class="text-purple-800">This is purple text.</p>
+          <p class="text-gray-500">This is gray text.</p>
+          <p class="text-white">This is white text.</p>
+          <p class="text-black">This is black text.</p>
+        </div>
+      </main>
+      
+      <Footer />
+    </div>
+  );
 }
 
-export default App
+export default App;
