@@ -1,12 +1,31 @@
 import React from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Hero from './components/Hero';
+import FoodCategories from './components/FoodCategories';
+import CategoryDetails from './components/CategoryDetails';
+import FoodMenu from './components/FoodMenu';
+import CustomizeOrder from './components/CustomizeOrder';
+import ServicesSection from './components/ServicesSection';
+import Cart from './components/Cart';
+import SeatReservation from './components/SeatReservation';
+
 
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
+      {/* 
+      <Hero />
+      <FoodCategories />
+       */}
+       {/* <CategoryDetails /> */}
+       {/* <FoodMenu /> */}
+       {/* <CustomizeOrder /> */}
+       <ServicesSection />
+       {/* <CartPage /> */}
+       {/* <Cart /> */}
+       {/* <SeatReservation /> */}
       <main className="flex-grow container mx-auto px-4 py-8">
         {/* Your page content goes here */}
         <h1 className="text-3xl font-bold mb-6 text-red-500">Welcome to Our Store</h1>

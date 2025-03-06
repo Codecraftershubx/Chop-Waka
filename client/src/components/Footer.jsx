@@ -73,7 +73,7 @@ const Footer = () => {
         
         {/* Bottom/Copyright */}
         <div className="mt-10 pt-6 border-t border-gray-700 text-center md:flex md:justify-between">
-          <p className="text-gray-400">&copy; 2025 Company Name. All rights reserved.</p>
+          <p className="text-gray-400">&copy; 2025 Chop Waka All rights reserved.</p>
           <p className="text-gray-400 mt-2 md:mt-0">
             <a href="/terms" className="hover:text-white mr-4">Terms of Service</a>
             <a href="/privacy" className="hover:text-white">Privacy Policy</a>

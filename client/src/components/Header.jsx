@@ -1,74 +1,110 @@
 import React, { useState } from 'react';
-import { XMarkIcon, Bars3Icon, ShoppingCartIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import SearchForm from './SearchForm';
+import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import MobileMenu from './MobileMenu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
+  
+  // Updated current date and user
+  const currentUser = "megafemworld";
+  const currentDateTime = "2025-03-06 22:28:37";
   
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
+    <header className="bg-gradient-to-r from-blue-600 to-blue-800 sticky top-0 z-50">
+      {/* Top bar with user info */}
+      <div className="bg-blue-900/30 text-white py-1">
+        <div className="container mx-auto px-4 flex justify-end text-xs md:text-sm">
+          <span className="opacity-80">
+            Welcome, {currentUser} • {currentDateTime.split(' ')[0]}
+          </span>
+        </div>
+      </div>
+      
+      {/* Main header content */}
+      <div className="container mx-auto px-4 py-5">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex-shrink-0">
             <a href="/" className="flex items-center">
-              <span className="text-2xl font-bold text-blue-600">Logo</span>
+              <div className="flex items-center space-x-2">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
+                  <span className="text-blue-600 text-xl font-bold">CW</span>
+                </div>
+                <div>
+                  <span className="text-2xl font-bold text-white tracking-wide">Chop</span>
+                  <span className="text-2xl font-light text-blue-100">Waka</span>
+                </div>
+              </div>
             </a>
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <a href="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</a>
-            <a href="/products" className="text-gray-700 hover:text-blue-600 font-medium">Products</a>
-            <a href="/about" className="text-gray-700 hover:text-blue-600 font-medium">About</a>
-            <a href="/contact" className="text-gray-700 hover:text-blue-600 font-medium">Contact</a>
+          <nav className="hidden md:flex space-x-1">
+            {['Home', 'Menu', 'Reservations', 'About', 'Contact'].map((item) => (
+              <a 
+                key={item}
+                href={`/${item.toLowerCase()}`} 
+                className="px-4 py-2 text-blue-100 hover:text-white hover:bg-blue-700/30 rounded-md transition-colors duration-200 font-medium"
+              >
+                {item}
+              </a>
+            ))}
           </nav>
           
-          {/* Icons */}
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={toggleSearch} 
-              className="text-gray-600 hover:text-blue-600 transition-colors" 
-              aria-label="Search"
-            >
-              <MagnifyingGlassIcon className="h-6 w-6" />
-            </button>
-            
+          {/* Order Now Button */}
+          <div className="hidden md:block">
             <a 
-              href="/cart" 
-              className="text-gray-600 hover:text-blue-600 transition-colors relative" 
-              aria-label="Cart"
+              href="/order" 
+              className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-2 px-6 rounded-full shadow-md transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
             >
-              <ShoppingCartIcon className="h-6 w-6" />
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
+              Order Now
             </a>
-            
-            {/* Mobile menu button */}
-            <button 
-              onClick={toggleMenu} 
-              className="md:hidden text-gray-600 hover:text-blue-600 transition-colors" 
-              aria-label="Menu"
-            >
-              {isMenuOpen ? (
-                <XMarkIcon className="h-6 w-6" />
-              ) : (
-                <Bars3Icon className="h-6 w-6" />
-              )}
-            </button>
           </div>
+          
+          {/* Mobile menu button */}
+          <button 
+            onClick={toggleMenu} 
+            className="md:hidden text-white hover:bg-blue-700/30 p-2 rounded-md transition-colors" 
+            aria-label="Menu"
+          >
+            {isMenuOpen ? (
+              <XMarkIcon className="h-6 w-6" />
+            ) : (
+              <Bars3Icon className="h-6 w-6" />
+            )}
+          </button>
         </div>
-        
-        {/* Search Form */}
-        {isSearchOpen && <SearchForm onClose={() => setIsSearchOpen(false)} />}
       </div>
       
       {/* Mobile Menu */}
-      {isMenuOpen && <MobileMenu />}
+      {isMenuOpen && (
+        <div className="md:hidden bg-blue-700">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {['Home', 'Menu', 'Reservations', 'About', 'Contact'].map((item) => (
+              <a 
+                key={item}
+                href={`/${item.toLowerCase()}`} 
+                className="block px-4 py-2 text-blue-100 hover:bg-blue-600 rounded-md"
+              >
+                {item}
+              </a>
+            ))}
+            <div className="pt-2 pb-1">
+              <a 
+                href="/order" 
+                className="block w-full text-center bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-2 px-6 rounded-md"
+              >
+                Order Now
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Decorative bottom border */}
+      <div className="h-1 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>
     </header>
   );
 };
