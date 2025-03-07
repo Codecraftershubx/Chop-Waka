@@ -9,6 +9,9 @@ import CustomizeOrder from './components/CustomizeOrder';
 import ServicesSection from './components/ServicesSection';
 import Cart from './components/Cart';
 import SeatReservation from './components/SeatReservation';
+import EventBooking from './components/EventBooking';
+import ContactUs from './components/ContactUs';
+import Checkout from './components/Checkout';
 
 
 function App() {
@@ -22,10 +25,13 @@ function App() {
        {/* <CategoryDetails /> */}
        {/* <FoodMenu /> */}
        {/* <CustomizeOrder /> */}
-       <ServicesSection />
+       {/* <ServicesSection /> */}
        {/* <CartPage /> */}
        {/* <Cart /> */}
        {/* <SeatReservation /> */}
+       {/* <EventBooking /> */}
+       {/* <ContactUs /> */}
+       <Checkout />
       <main className="flex-grow container mx-auto px-4 py-8">
         {/* Your page content goes here */}
         <h1 className="text-3xl font-bold mb-6 text-red-500">Welcome to Our Store</h1>
