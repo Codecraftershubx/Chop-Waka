@@ -34,7 +34,7 @@ const ServicesSection = () => {
             </div>
             
             <div className="p-8 flex-grow">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Food Order</h3>
+              <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">Food Order</h3>
               <p className="text-gray-600 mb-6">
                 Browse our extensive menu of delicious meals prepared with fresh ingredients. Place your order online for pickup or delivery at your convenience.
               </p>
@@ -73,7 +73,7 @@ const ServicesSection = () => {
             </div>
             
             <div className="p-8 flex-grow">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Seat Reservation</h3>
+              <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">Seat Reservation</h3>
               <p className="text-gray-600 mb-6">
                 Reserve your table in advance to ensure a seamless dining experience. Choose your preferred seating area and time for your visit.
               </p>
@@ -112,7 +112,7 @@ const ServicesSection = () => {
             </div>
             
             <div className="p-8 flex-grow">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Event Booking & Catering</h3>
+              <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">Event Booking & Catering</h3>
               <p className="text-gray-600 mb-6">
                 Host your special events with us or let us bring our delicious food to your venue with our professional catering services.
               </p>
