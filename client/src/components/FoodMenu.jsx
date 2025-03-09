@@ -9,6 +9,7 @@ import {
   MinusIcon
 } from '@heroicons/react/24/outline';
 import CustomizeOrder from './CustomizeOrder';
+import { useCart } from '../context/CartContext';
 
 const FoodMenu = () => {
   // State for search and filters
@@ -16,30 +17,40 @@ const FoodMenu = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [activeFilters, setActiveFilters] = useState({
     cuisine: [],
-    dietary: [],
     availability: []
   });
   const [menuItems, setMenuItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   
-  // Cart and customization state
-  const [cart, setCart] = useState([]);
+  // Cart UI state
   const [showCart, setShowCart] = useState(false);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
 
+  // Use cart context for persistent cart management
+  const { 
+    cart, 
+    addToCart, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart, 
+    getCartSummary 
+  } = useCart();
+
   // Current user and date - updated with the newest provided values
   const currentUser = "megafemworld";
-  const currentDate = "2025-03-06 22:23:50";
+  const currentDate = "2025-03-09 20:17:18";
+
+  // Get cart summary
+  const { itemCount: cartCount, total: cartTotal } = getCartSummary();
 
   // Available filter options
   const filterOptions = {
     cuisine: ['Italian', 'Mexican', 'Indian', 'Chinese', 'American', 'Japanese', 'Mediterranean', 'Thai'],
-    dietary: ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Low Carb', 'Keto'],
     availability: ['Available Now', 'Limited Quantity', 'Pre-Order']
   };
 
-  // Sample menu data
+  // Add customization options to the menu items
   const allMenuItems = [
     {
       id: 1,
@@ -48,9 +59,23 @@ const FoodMenu = () => {
       basePrice: 14.99,
       image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=1000',
       cuisine: 'Italian',
-      dietary: ['Vegetarian'],
       availability: 'Available Now',
-      rating: 4.8
+      rating: 4.8,
+      isCustomizable: true,
+      customizationOptions: {
+        sizes: [
+          { id: 'small', name: 'Small (10")', priceAdjustment: -3.00 },
+          { id: 'medium', name: 'Medium (12")', priceAdjustment: 0 },
+          { id: 'large', name: 'Large (14")', priceAdjustment: 4.00 }
+        ],
+        toppings: [
+          { id: 1, name: 'Extra Cheese', price: 2.00 },
+          { id: 2, name: 'Pepperoni', price: 2.50 },
+          { id: 3, name: 'Mushrooms', price: 1.50 },
+          { id: 4, name: 'Bell Peppers', price: 1.00 },
+          { id: 5, name: 'Olives', price: 1.00 }
+        ]
+      }
     },
     {
       id: 2,
@@ -59,9 +84,22 @@ const FoodMenu = () => {
       basePrice: 16.50,
       image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=1000',
       cuisine: 'Indian',
-      dietary: ['Gluten-Free'],
       availability: 'Available Now',
-      rating: 4.7
+      rating: 4.7,
+      isCustomizable: true,
+      customizationOptions: {
+        sizes: [
+          { id: 'small', name: 'Small', priceAdjustment: -2.50 },
+          { id: 'medium', name: 'Medium', priceAdjustment: 0 },
+          { id: 'large', name: 'Large', priceAdjustment: 3.00 }
+        ],
+        toppings: [
+          { id: 1, name: 'Extra Sauce', price: 1.00 },
+          { id: 2, name: 'Extra Chicken', price: 3.00 },
+          { id: 3, name: 'Paneer', price: 2.50 },
+          { id: 4, name: 'Raita', price: 1.50 }
+        ]
+      }
     },
     {
       id: 3,
@@ -70,9 +108,22 @@ const FoodMenu = () => {
       basePrice: 15.75,
       image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?q=80&w=1000',
       cuisine: 'Thai',
-      dietary: ['Vegetarian', 'Vegan', 'Gluten-Free'],
       availability: 'Limited Quantity',
-      rating: 4.5
+      rating: 4.5,
+      isCustomizable: true,
+      customizationOptions: {
+        sizes: [
+          { id: 'small', name: 'Small', priceAdjustment: -2.00 },
+          { id: 'medium', name: 'Medium', priceAdjustment: 0 },
+          { id: 'large', name: 'Large', priceAdjustment: 2.50 }
+        ],
+        toppings: [
+          { id: 1, name: 'Extra Tofu', price: 1.75 },
+          { id: 2, name: 'Chicken', price: 2.50 },
+          { id: 3, name: 'Shrimp', price: 3.00 },
+          { id: 4, name: 'Extra Peanuts', price: 0.75 }
+        ]
+      }
     },
     {
       id: 4,
@@ -81,11 +132,27 @@ const FoodMenu = () => {
       basePrice: 13.99,
       image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000',
       cuisine: 'American',
-      dietary: [],
       availability: 'Available Now',
-      rating: 4.6
-    },
-    // Remaining items as before...
+      rating: 4.6,
+      isCustomizable: true,
+      customizationOptions: {
+        sizes: [
+          { id: 'small', name: 'Single', priceAdjustment: -3.00 },
+          { id: 'medium', name: 'Double', priceAdjustment: 0 },
+          { id: 'large', name: 'Triple', priceAdjustment: 3.00 }
+        ],
+        toppings: [
+          { id: 1, name: 'Extra Cheese', price: 1.50 },
+          { id: 2, name: 'Bacon', price: 2.00 },
+          { id: 3, name: 'Avocado', price: 1.75 },
+          { id: 4, name: 'Fried Egg', price: 1.50 },
+          { id: 5, name: 'Caramelized Onions', price: 1.00 },
+          { id: 6, name: 'Mushrooms', price: 1.25 },
+          { id: 7, name: 'Jalapeños', price: 0.75 },
+          { id: 8, name: 'BBQ Sauce', price: 0.50 },
+        ]
+      }
+    }
   ];
 
   // Initialize menu
@@ -113,15 +180,6 @@ const FoodMenu = () => {
     if (activeFilters.cuisine.length > 0) {
       result = result.filter(item => 
         activeFilters.cuisine.includes(item.cuisine)
-      );
-    }
-    
-    // Apply dietary filters
-    if (activeFilters.dietary.length > 0) {
-      result = result.filter(item => 
-        activeFilters.dietary.some(filter => 
-          item.dietary.includes(filter)
-        )
       );
     }
     
@@ -156,7 +214,6 @@ const FoodMenu = () => {
   const clearFilters = () => {
     setActiveFilters({
       cuisine: [],
-      dietary: [],
       availability: []
     });
     setSearchQuery('');
@@ -166,7 +223,6 @@ const FoodMenu = () => {
   const handleCustomize = (item) => {
     setCurrentItem(item);
     setIsCustomizing(true);
-    setShowCart(false);
   };
   
   // Close customize modal
@@ -175,24 +231,41 @@ const FoodMenu = () => {
     setCurrentItem(null);
   };
   
-  // Add item to cart - removed automatic cart opening
+  // Add item to cart from customize modal
   const handleAddToCart = (customizedItem) => {
-    setCart(prev => [...prev, {...customizedItem, cartId: Date.now()}]);
-    // The line to show cart has been removed as requested
+    addToCart(customizedItem);
+    setIsCustomizing(false); // Close the modal after adding
   };
   
-  // Remove item from cart
-  const removeFromCart = (cartId) => {
-    setCart(prev => prev.filter(item => item.cartId !== cartId));
-  };
-  
-  // Update item quantity
-  const updateQuantity = (cartId, newQuantity) => {
-    if (newQuantity < 1) return;
+  // Add to cart directly without customization (quick add)
+  const handleQuickAdd = (item) => {
+    // Find medium size (or default)
+    const mediumSize = item.customizationOptions?.sizes?.find(s => s.id === 'medium') || 
+      { id: 'medium', name: 'Medium', priceAdjustment: 0 };
+      
+    // Calculate item price
+    const itemPrice = item.basePrice + mediumSize.priceAdjustment;
     
-    setCart(prev => prev.map(item => 
-      item.cartId === cartId ? {...item, quantity: newQuantity, totalPrice: (item.totalPrice / item.quantity) * newQuantity} : item
-    ));
+    const cartItem = {
+      ...item,
+      quantity: 1,
+      size: mediumSize.name,
+      sizeId: mediumSize.id,
+      toppings: [],
+      toppingIds: [],
+      specialInstructions: '',
+      pricePerItem: itemPrice,
+      totalPrice: itemPrice
+    };
+    
+    addToCart(cartItem);
+  };
+  
+  // Handle confirm clear cart
+  const handleClearCart = () => {
+    if (window.confirm('Are you sure you want to clear your cart?')) {
+      clearCart();
+    }
   };
   
   // Toggle cart visibility
@@ -200,12 +273,6 @@ const FoodMenu = () => {
     setShowCart(prev => !prev);
   };
   
-  // Get cart total items count
-  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-  
-  // Calculate cart total price
-  const cartTotal = cart.reduce((total, item) => total + item.totalPrice, 0);
-
   // Format price for display
   const formatPrice = (price) => {
     return `$${price.toFixed(2)}`;
@@ -239,12 +306,22 @@ const FoodMenu = () => {
               <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl w-80 sm:w-96 z-50">
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center">
                   <h3 className="font-bold">Your Cart ({cartCount})</h3>
-                  <button 
-                    onClick={() => setShowCart(false)} 
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <XMarkIcon className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {cart.length > 0 && (
+                      <button 
+                        onClick={handleClearCart}
+                        className="text-xs text-gray-500 hover:text-red-500"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setShowCart(false)} 
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <XMarkIcon className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="max-h-96 overflow-y-auto">
@@ -349,7 +426,6 @@ const FoodMenu = () => {
           </div>
         </div>
         
-        {/* The rest of the component remains the same */}
         {/* Search Bar and Filter Toggle */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -406,26 +482,6 @@ const FoodMenu = () => {
                 </div>
               </div>
               
-              {/* Dietary Filters */}
-              <div>
-                <h4 className="font-medium mb-2 text-gray-700">Dietary Preferences</h4>
-                <div className="flex flex-wrap gap-2">
-                  {filterOptions.dietary.map(diet => (
-                    <button
-                      key={diet}
-                      onClick={() => toggleFilter('dietary', diet)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        activeFilters.dietary.includes(diet)
-                          ? 'bg-red-400 text-white'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
-                    >
-                      {diet}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
               {/* Availability Filters */}
               <div>
                 <h4 className="font-medium mb-2 text-gray-700">Availability</h4>
@@ -451,7 +507,6 @@ const FoodMenu = () => {
         
         {/* Active Filters Display */}
         {(activeFilters.cuisine.length > 0 || 
-          activeFilters.dietary.length > 0 || 
           activeFilters.availability.length > 0) && (
           <div className="flex flex-wrap gap-2 mb-6">
             {activeFilters.cuisine.map(cuisine => (
@@ -460,18 +515,6 @@ const FoodMenu = () => {
                 <button 
                   onClick={() => toggleFilter('cuisine', cuisine)} 
                   className="ml-2 text-red-600 hover:text-red-800"
-                >
-                  &times;
-                </button>
-              </div>
-            ))}
-            
-            {activeFilters.dietary.map(diet => (
-              <div key={diet} className="bg-green-100 text-green-800 rounded-full px-3 py-1 text-sm flex items-center">
-                {diet}
-                <button 
-                  onClick={() => toggleFilter('dietary', diet)} 
-                  className="ml-2 text-green-600 hover:text-green-800"
                 >
                   &times;
                 </button>
@@ -523,6 +566,16 @@ const FoodMenu = () => {
                     <span className="text-yellow-500 mr-1">★</span>
                     <span className="text-sm font-medium">{item.rating}</span>
                   </div>
+                  
+                  {/* Quick Add Button - Overlay on image hover */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleQuickAdd(item)}
+                      className="bg-white text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-full font-medium transition-colors"
+                    >
+                      Quick Add
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="p-4">
@@ -538,16 +591,6 @@ const FoodMenu = () => {
                     <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
                       {item.cuisine}
                     </span>
-                    
-                    {/* Dietary Tags */}
-                    {item.dietary.map(diet => (
-                      <span 
-                        key={diet} 
-                        className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full"
-                      >
-                        {diet}
-                      </span>
-                    ))}
                   </div>
                   
                   <button 

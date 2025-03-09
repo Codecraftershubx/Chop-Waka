@@ -1,29 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   CreditCardIcon, ShoppingBagIcon, UserIcon, TruckIcon, ShieldCheckIcon,
   CheckIcon, ExclamationCircleIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon
 } from '@heroicons/react/24/outline';
+import { useCart } from '../context/CartContext';
 
 const Checkout = () => {
-  // Current user info
-  const currentDateTime = "2025-03-07 00:41:38";
-  const currentUser = "megafemworld";
+  const navigate = useNavigate();
   
-  // Cart items
-  const [cartItems, setCartItems] = useState([
-    { id: 1, name: "Margherita Pizza", image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=1000",
-      price: 14.99, quantity: 1, options: "Medium, Thin Crust" },
-    { id: 2, name: "Chicken Tikka Masala", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=1000",
-      price: 16.50, quantity: 2, options: "Spicy, With Naan" },
-    { id: 3, name: "Chocolate Cake", image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1080",
-      price: 7.99, quantity: 1, options: "Slice" }
-  ]);
+  // Access cart data from CartContext
+  const { 
+    cart, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart, 
+    getCartSummary 
+  } = useCart();
+  
+  // Current user info - using the updated values from the query
+  const currentDateTime = "2025-03-09 22:07:52";
+  const currentUser = "megafemworld";
   
   // Order details state
   const [orderDetails, setOrderDetails] = useState({
-    deliveryMethod: 'delivery', deliveryTime: 'asap', scheduledTime: '', scheduledDate: '',
+    deliveryMethod: 'delivery', 
+    deliveryTime: 'asap', 
+    scheduledTime: '', 
+    scheduledDate: '',
     address: { street: '', city: '', state: '', zipCode: '', instructions: '' },
-    paymentMethod: 'card', cardInfo: { number: '', name: currentUser, expiry: '', cvv: '' }
+    paymentMethod: 'card', 
+    cardInfo: { number: '', name: currentUser, expiry: '', cvv: '' },
+    termsAccepted: false,
+    tip: 0
   });
   
   // UI state
@@ -32,6 +41,18 @@ const Checkout = () => {
   const [expandedSections, setExpandedSections] = useState({
     cart: true, delivery: true, payment: true
   });
+  
+  // Get the summary from CartContext
+  const summary = getCartSummary();
+  const cartItems = cart;
+  
+  // If cart is empty and not after order completion, redirect to menu
+  useEffect(() => {
+    if (cartItems.length === 0 && !orderCompleted) {
+      // You could add a timeout or confirm dialog here
+      // navigate('/menu');
+    }
+  }, [cartItems, orderCompleted, navigate]);
   
   // Handle input changes
   const handleInputChange = (e) => {
@@ -50,32 +71,18 @@ const Checkout = () => {
     }
   };
   
-  // Calculate order summary
-  const calculateOrderSummary = () => {
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.0875; // 8.75% tax
-    const deliveryFee = orderDetails.deliveryMethod === 'delivery' ? 4.99 : 0;
-    const tip = parseFloat(orderDetails.tip) || 0;
-    const total = subtotal + tax + deliveryFee + tip;
+  // Calculate order total including delivery fee and tip
+  const calculateOrderTotal = () => {
+    const tipAmount = parseFloat(orderDetails.tip) || 0;
+    const deliveryFee = orderDetails.deliveryMethod === 'delivery' ? 3.99 : 0;
     
     return {
-      subtotal: subtotal.toFixed(2),
-      tax: tax.toFixed(2),
+      subtotal: summary.subtotal.toFixed(2),
+      tax: summary.tax.toFixed(2),
       deliveryFee: deliveryFee.toFixed(2),
-      tip: tip.toFixed(2),
-      total: total.toFixed(2)
+      tip: tipAmount.toFixed(2),
+      total: (summary.subtotal + summary.tax + deliveryFee + tipAmount).toFixed(2)
     };
-  };
-  
-  // Update item quantity
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity } : item));
-  };
-  
-  // Remove item from cart
-  const removeItem = (id) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
   };
   
   // Toggle section expansion
@@ -102,10 +109,15 @@ const Checkout = () => {
     // Generate order number and show confirmation
     const genOrderNumber = "FZ" + Math.floor(100000 + Math.random() * 900000);
     setOrderNumber(genOrderNumber);
+    
+    // Clear cart after successful order
+    clearCart();
     setOrderCompleted(true);
+    
+    // In a real app, you would send the order to your backend here
   };
   
-  const summary = calculateOrderSummary();
+  const orderSummary = calculateOrderTotal();
   
   // Section header component for consistency
   const SectionHeader = ({ title, icon, section }) => (
@@ -156,7 +168,7 @@ const Checkout = () => {
                 </div>
                 <div>
                   <p className="text-gray-600">Total:</p>
-                  <p className="font-medium">${summary.total}</p>
+                  <p className="font-medium">${orderSummary.total}</p>
                 </div>
               </div>
             </div>
@@ -202,24 +214,28 @@ const Checkout = () => {
                   {cartItems.length > 0 ? (
                     <div className="space-y-4">
                       {cartItems.map((item) => (
-                        <div key={item.id} className="flex items-center py-4 border-b">
+                        <div key={item.cartId} className="flex items-center py-4 border-b">
                           <img src={item.image} alt={item.name} className="h-20 w-20 object-cover rounded-md" />
                           <div className="ml-4 flex-1">
                             <div className="flex justify-between">
                               <h3 className="font-medium text-gray-900">{item.name}</h3>
-                              <p className="font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                              <p className="font-medium text-gray-900">${(item.pricePerItem * item.quantity).toFixed(2)}</p>
                             </div>
-                            <p className="text-sm text-gray-500">{item.options}</p>
+                            <p className="text-sm text-gray-500">
+                              {item.size && `Size: ${item.size}`}
+                              {item.toppings && item.toppings.length > 0 && 
+                               ` • Toppings: ${item.toppings.join(', ')}`}
+                            </p>
                             
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center border border-gray-300 rounded-md">
-                                <button onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                <button onClick={() => updateQuantity(item.cartId, item.quantity - 1)}
                                         className="px-3 py-1 text-gray-600 hover:bg-gray-100">-</button>
                                 <span className="px-3 py-1 border-x border-gray-300">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                <button onClick={() => updateQuantity(item.cartId, item.quantity + 1)}
                                         className="px-3 py-1 text-gray-600 hover:bg-gray-100">+</button>
                               </div>
-                              <button onClick={() => removeItem(item.id)}
+                              <button onClick={() => removeFromCart(item.cartId)}
                                       className="text-sm text-red-600 hover:text-red-800">Remove</button>
                             </div>
                           </div>
@@ -307,6 +323,59 @@ const Checkout = () => {
                       </div>
                     </div>
                   )}
+                  
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Delivery Time</h3>
+                    <div className="flex space-x-4">
+                      <label className={`flex-1 cursor-pointer border rounded-md p-4 flex items-center ${
+                        orderDetails.deliveryTime === 'asap' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                      }`}>
+                        <input type="radio" name="deliveryTime" value="asap" 
+                               checked={orderDetails.deliveryTime === 'asap'}
+                               onChange={handleInputChange} className="mr-2 h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="font-medium">As Soon As Possible</p>
+                          <p className="text-xs text-gray-500">30-45 minutes estimated</p>
+                        </div>
+                      </label>
+                      
+                      <label className={`flex-1 cursor-pointer border rounded-md p-4 flex items-center ${
+                        orderDetails.deliveryTime === 'scheduled' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                      }`}>
+                        <input type="radio" name="deliveryTime" value="scheduled" 
+                               checked={orderDetails.deliveryTime === 'scheduled'}
+                               onChange={handleInputChange} className="mr-2 h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="font-medium">Schedule for Later</p>
+                          <p className="text-xs text-gray-500">Select date and time</p>
+                        </div>
+                      </label>
+                    </div>
+                    
+                    {orderDetails.deliveryTime === 'scheduled' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                          <input type="date" name="scheduledDate" value={orderDetails.scheduledDate}
+                                 onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" 
+                                 min={new Date().toISOString().split('T')[0]} required />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                          <select name="scheduledTime" value={orderDetails.scheduledTime}
+                                  onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required>
+                            <option value="">Select time</option>
+                            <option value="11:00 AM">11:00 AM</option>
+                            <option value="11:30 AM">11:30 AM</option>
+                            <option value="12:00 PM">12:00 PM</option>
+                            <option value="12:30 PM">12:30 PM</option>
+                            <option value="1:00 PM">1:00 PM</option>
+                            {/* Add more time options as needed */}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -361,35 +430,6 @@ const Checkout = () => {
                     </div>
                   </div>
                   
-                  {/* {orderDetails.paymentMethod === 'card' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                        <input type="text" name="cardInfo.number" value={orderDetails.cardInfo.number}
-                               onChange={handleInputChange} placeholder="**** **** **** ****"
-                               className="w-full p-2 border border-gray-300 rounded-md" maxLength="19" required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
-                        <input type="text" name="cardInfo.name" value={orderDetails.cardInfo.name}
-                               onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                          <input type="text" name="cardInfo.expiry" value={orderDetails.cardInfo.expiry}
-                                 onChange={handleInputChange} placeholder="MM/YY"
-                                 className="w-full p-2 border border-gray-300 rounded-md" required />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                          <input type="text" name="cardInfo.cvv" value={orderDetails.cardInfo.cvv}
-                                 onChange={handleInputChange} placeholder="***"
-                                 className="w-full p-2 border border-gray-300 rounded-md" maxLength="4" required />
-                        </div>
-                      </div>
-                    </div>
-                  )} */}
                   
                   <div className="pt-4">
                     <label className="flex items-center text-sm">
@@ -414,38 +454,51 @@ const Checkout = () => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>${summary.subtotal}</span>
+                  <span>${orderSummary.subtotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span>${summary.tax}</span>
+                  <span>${orderSummary.tax}</span>
                 </div>
                 {orderDetails.deliveryMethod === 'delivery' && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Delivery Fee</span>
-                    <span>${summary.deliveryFee}</span>
+                    <span>${orderSummary.deliveryFee}</span>
                   </div>
                 )}
-                
+                {parseFloat(orderDetails.tip) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tip</span>
+                    <span>${orderSummary.tip}</span>
+                  </div>
+                )}
                 
                 <div className="border-t pt-4 mt-4">
                   <div className="flex justify-between text-lg font-medium">
                     <span>Total</span>
-                    <span>${summary.total}</span>
+                    <span>${orderSummary.total}</span>
                   </div>
                 </div>
               </div>
               
               <button
                 onClick={handlePlaceOrder}
-                className="w-full mt-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center justify-center"
+                disabled={cartItems.length === 0}
+                className={`w-full mt-6 py-3 rounded-md flex items-center justify-center
+                  ${cartItems.length === 0 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
               >
-                Place Order
+                {cartItems.length === 0 ? 'Cart is Empty' : 'Place Order'}
               </button>
               
               <div className="mt-6 flex items-center justify-center text-xs text-gray-500">
                 <ShieldCheckIcon className="h-4 w-4 mr-1" />
                 Secure checkout powered by Stripe
+              </div>
+              
+              <div className="mt-4 text-center text-xs text-gray-500">
+                Logged in as: {currentUser} • {currentDateTime}
               </div>
             </div>
           </div>
