@@ -396,11 +396,11 @@ const FoodMenu = () => {
                           <span className="font-medium">Total:</span>
                           <span className="font-bold text-red-600">{formatPrice(cartTotal)}</span>
                         </div>
-                        
+                        <a href="/checkout">
                         <button className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg transition-colors">
                           Proceed to Checkout
                         </button>
-                        
+                        </a>
                         <div className="text-center text-xs text-gray-500 mt-2">
                           Ordered by: {currentUser} • {currentDate.split(' ')[0]}
                         </div>

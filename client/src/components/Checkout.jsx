@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CreditCardIcon, ShoppingBagIcon, UserIcon, TruckIcon, ShieldCheckIcon,
-  CheckIcon, ExclamationCircleIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon
+  CheckIcon, ExclamationCircleIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { useCart } from '../context/CartContext';
 
@@ -18,8 +19,8 @@ const Checkout = () => {
     getCartSummary 
   } = useCart();
   
-  // Current user info - using the updated values from the query
-  const currentDateTime = "2025-03-09 22:07:52";
+  // Current user info - updated with the latest values
+  const currentDateTime = "2025-03-09 23:23:28";
   const currentUser = "megafemworld";
   
   // Order details state
@@ -28,12 +29,22 @@ const Checkout = () => {
     deliveryTime: 'asap', 
     scheduledTime: '', 
     scheduledDate: '',
-    address: { street: '', city: '', state: '', zipCode: '', instructions: '' },
-    paymentMethod: 'card', 
-    cardInfo: { number: '', name: currentUser, expiry: '', cvv: '' },
+    address: { 
+      name: currentUser,  // Pre-fill with current user
+      phone: '',
+      street: '', 
+      city: '', 
+      state: '', 
+      zipCode: '', 
+      instructions: '' 
+    },
+    paymentMethod: 'card',
     termsAccepted: false,
     tip: 0
   });
+
+  // Form validation state
+  const [formErrors, setFormErrors] = useState({});
   
   // UI state
   const [orderCompleted, setOrderCompleted] = useState(false);
@@ -41,22 +52,30 @@ const Checkout = () => {
   const [expandedSections, setExpandedSections] = useState({
     cart: true, delivery: true, payment: true
   });
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [processingStep, setProcessingStep] = useState("");
+
   // Get the summary from CartContext
   const summary = getCartSummary();
-  const cartItems = cart;
+  const cartItems = cart || []; // Ensure cartItems is always an array
   
   // If cart is empty and not after order completion, redirect to menu
   useEffect(() => {
-    if (cartItems.length === 0 && !orderCompleted) {
+    if (cartItems.length === 0 && !orderCompleted && !isProcessing) {
       // You could add a timeout or confirm dialog here
       // navigate('/menu');
     }
-  }, [cartItems, orderCompleted, navigate]);
+  }, [cartItems, orderCompleted, navigate, isProcessing]);
   
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Clear specific error when field is edited
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: null }));
+    }
     
     if (name.includes('.')) {
       const [section, field] = name.split('.');
@@ -64,6 +83,14 @@ const Checkout = () => {
         ...prev,
         [section]: { ...prev[section], [field]: type === 'checkbox' ? checked : value }
       }));
+      
+      // Clear nested error
+      if (formErrors[section]?.[field]) {
+        setFormErrors(prev => ({ 
+          ...prev, 
+          [section]: { ...prev[section], [field]: null } 
+        }));
+      }
     } else {
       setOrderDetails(prev => ({
         ...prev, [name]: type === 'checkbox' ? checked : value
@@ -73,15 +100,20 @@ const Checkout = () => {
   
   // Calculate order total including delivery fee and tip
   const calculateOrderTotal = () => {
+    // Get current summary from cartContext
+    const currentSummary = getCartSummary();
+    const subtotal = parseFloat(currentSummary.subtotal) || 0;
+    const tax = parseFloat(currentSummary.tax) || 0;
+
     const tipAmount = parseFloat(orderDetails.tip) || 0;
     const deliveryFee = orderDetails.deliveryMethod === 'delivery' ? 3.99 : 0;
     
     return {
-      subtotal: summary.subtotal.toFixed(2),
-      tax: summary.tax.toFixed(2),
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
       deliveryFee: deliveryFee.toFixed(2),
       tip: tipAmount.toFixed(2),
-      total: (summary.subtotal + summary.tax + deliveryFee + tipAmount).toFixed(2)
+      total: (subtotal + tax + deliveryFee + tipAmount).toFixed(2)
     };
   };
   
@@ -89,32 +121,200 @@ const Checkout = () => {
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
-  
-  // Place order handler
-  const handlePlaceOrder = (e) => {
-    e.preventDefault();
+
+  // Validate form fields
+  const validateForm = () => {
+    const errors = {};
     
     // Basic validation
     if (!orderDetails.termsAccepted) {
-      alert("Please accept the terms and conditions to continue.");
+      errors.termsAccepted = "Please accept the terms and conditions to continue";
+    }
+    
+    if (orderDetails.deliveryMethod === 'delivery') {
+      if (!orderDetails.address.name) {
+        errors.address = { ...errors.address, name: "Name is required" };
+      }
+      
+      if (!orderDetails.address.phone) {
+        errors.address = { ...errors.address, phone: "Phone number is required" };
+      } else if (!/^\d{10,15}$/.test(orderDetails.address.phone.replace(/[^\d]/g, ''))) {
+        errors.address = { ...errors.address, phone: "Please enter a valid phone number" };
+      }
+      
+      if (!orderDetails.address.street) {
+        errors.address = { ...errors.address, street: "Street address is required" };
+      }
+      if (!orderDetails.address.city) {
+        errors.address = { ...errors.address, city: "City is required" };
+      }
+      if (!orderDetails.address.state) {
+        errors.address = { ...errors.address, state: "State is required" };
+      }
+      if (!orderDetails.address.zipCode) {
+        errors.address = { ...errors.address, zipCode: "ZIP code is required" };
+      }
+    }
+    
+    if (orderDetails.deliveryTime === 'scheduled') {
+      if (!orderDetails.scheduledDate) {
+        errors.scheduledDate = "Please select a delivery date";
+      }
+      if (!orderDetails.scheduledTime) {
+        errors.scheduledTime = "Please select a delivery time";
+      }
+    }
+
+    
+    return errors;
+  };
+  
+  // Process payment
+  const processPayment = async () => {
+    try {
+      setProcessingStep("Processing payment...");
+      
+      // This is where you would integrate with a payment processor like Stripe
+      const paymentData = {
+        amount: calculateOrderTotal().total,
+        currency: 'usd',
+        paymentMethod: orderDetails.paymentMethod,
+        cardInfo: orderDetails.paymentMethod === 'card' ? {
+          // Only send minimal required info to backend
+          lastFour: orderDetails.cardInfo.number.slice(-4),
+          expiryMonth: orderDetails.cardInfo.expiry.split('/')[0],
+          expiryYear: orderDetails.cardInfo.expiry.split('/')[1],
+        } : null
+      };
+      
+      // Simulate API call with a delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Return transaction info
+      return { 
+        success: true,
+        transactionId: 'txn_' + Math.random().toString(36).substring(2, 15)
+      };
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      throw new Error(error?.response?.data?.message || "Payment processing failed. Please try again.");
+    }
+  };
+  
+  // Submit order to backend
+  const submitOrderToBackend = async (paymentResult) => {
+    try {
+      setProcessingStep("Creating your order...");
+      
+      const orderSummary = calculateOrderTotal();
+      
+      // Prepare order data
+      const orderData = {
+        customer: {
+          name: orderDetails.address.name || currentUser,
+          email: 'user@example.com', // In a real app, get this from user profile
+          phone: orderDetails.address.phone, // Now using the phone from the form
+        },
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          pricePerItem: item.pricePerItem,
+          totalPrice: item.totalPrice,
+          customizations: {
+            size: item.size,
+            toppings: item.toppings,
+            specialInstructions: item.specialInstructions || ''
+          }
+        })),
+        deliveryDetails: {
+          method: orderDetails.deliveryMethod,
+          time: orderDetails.deliveryTime === 'asap' ? 'ASAP' : `${orderDetails.scheduledDate} ${orderDetails.scheduledTime}`,
+          address: orderDetails.deliveryMethod === 'delivery' ? orderDetails.address : null
+        },
+        payment: {
+          method: orderDetails.paymentMethod,
+          transactionId: paymentResult.transactionId,
+          subtotal: parseFloat(orderSummary.subtotal),
+          tax: parseFloat(orderSummary.tax),
+          deliveryFee: parseFloat(orderSummary.deliveryFee),
+          tip: parseFloat(orderSummary.tip),
+          total: parseFloat(orderSummary.total)
+        },
+        orderDate: currentDateTime
+      };
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Return a mock order response
+      return {
+        success: true,
+        order: {
+          id: 'FZ' + Math.floor(100000 + Math.random() * 900000),
+          estimatedDeliveryTime: '30-45 minutes',
+          status: 'confirmed'
+        }
+      };
+    } catch (error) {
+      console.error("Order submission error:", error);
+      throw new Error(error?.response?.data?.message || "Failed to submit order. Please try again.");
+    }
+  };
+  
+  // Place order handler
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      
+      // Expand sections that have errors
+      if (errors.address || errors.scheduledDate || errors.scheduledTime) {
+        setExpandedSections(prev => ({ ...prev, delivery: true }));
+      }
+      if (errors.cardInfo || errors.termsAccepted) {
+        setExpandedSections(prev => ({ ...prev, payment: true }));
+      }
+      
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('.error-message');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
       return;
     }
     
-    if (orderDetails.deliveryMethod === 'delivery' && 
-        (!orderDetails.address.street || !orderDetails.address.zipCode)) {
-      alert("Please fill in all required delivery address fields.");
-      return;
+    // Start processing
+    setIsProcessing(true);
+    setErrorMessage("");
+    
+    try {
+      // 1. Process payment
+      const paymentResult = await processPayment();
+      
+      // 2. Submit order to backend
+      const orderResult = await submitOrderToBackend(paymentResult);
+      
+      // 3. Complete the order
+      setOrderNumber(orderResult.order.id);
+      setProcessingStep("Order confirmed!");
+      
+      // 4. Clear the cart
+      clearCart();
+      
+      // 5. Show order confirmation
+      setOrderCompleted(true);
+    } catch (error) {
+      console.error("Order processing error:", error);
+      setErrorMessage(error.message || "An unexpected error occurred. Please try again.");
+      setProcessingStep("");
+    } finally {
+      setIsProcessing(false);
     }
-    
-    // Generate order number and show confirmation
-    const genOrderNumber = "FZ" + Math.floor(100000 + Math.random() * 900000);
-    setOrderNumber(genOrderNumber);
-    
-    // Clear cart after successful order
-    clearCart();
-    setOrderCompleted(true);
-    
-    // In a real app, you would send the order to your backend here
   };
   
   const orderSummary = calculateOrderTotal();
@@ -130,6 +330,23 @@ const Checkout = () => {
       {expandedSections[section] ? 
         <ChevronUpIcon className="h-5 w-5 text-blue-700" /> : 
         <ChevronDownIcon className="h-5 w-5 text-blue-700" />}
+    </div>
+  );
+
+  // Field error message component
+  const ErrorMessage = ({ error }) => error ? (
+    <p className="text-red-500 text-xs mt-1 error-message">{error}</p>
+  ) : null;
+  
+  // Processing overlay
+  const ProcessingOverlay = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-sm w-full shadow-xl text-center">
+        <ArrowPathIcon className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+        <h3 className="text-xl font-medium text-gray-900 mb-2">Processing Order</h3>
+        <p className="text-gray-600 mb-4">{processingStep}</p>
+        <p className="text-sm text-gray-500">Please do not refresh the page...</p>
+      </div>
     </div>
   );
   
@@ -154,6 +371,10 @@ const Checkout = () => {
                 <div>
                   <p className="text-gray-600">Order Date:</p>
                   <p className="font-medium">{currentDateTime}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Customer:</p>
+                  <p className="font-medium">{orderDetails.address.name}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Delivery Method:</p>
@@ -192,11 +413,24 @@ const Checkout = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
+      {isProcessing && <ProcessingOverlay />}
+      
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
           <p className="text-gray-600">Complete your order by providing your delivery and payment details.</p>
         </div>
+        
+        {/* Error Message Banner */}
+        {errorMessage && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-start">
+            <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">There was a problem processing your order</p>
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          </div>
+        )}
         
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column - Order Form */}
@@ -298,27 +532,126 @@ const Checkout = () => {
                     <div className="space-y-4">
                       <h3 className="font-medium">Delivery Address</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                          <input type="text" name="address.street" value={orderDetails.address.street}
-                                 onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required />
+                        {/* Name and Phone fields */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="address.name"
+                            value={orderDetails.address.name}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.address?.name ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="John Doe"
+                            required
+                          />
+                          <ErrorMessage error={formErrors.address?.name} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                          <input type="text" name="address.city" value={orderDetails.address.city}
-                                 onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            name="address.phone"
+                            value={orderDetails.address.phone}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.address?.phone ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="(123) 456-7890"
+                            required
+                          />
+                          <ErrorMessage error={formErrors.address?.phone} />
                         </div>
+                        
+                        {/* Street Address */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Street Address <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="address.street"
+                            value={orderDetails.address.street}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.address?.street ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            required
+                          />
+                          <ErrorMessage error={formErrors.address?.street} />
+                        </div>
+                        
+                        {/* City */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="address.city"
+                            value={orderDetails.address.city}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.address?.city ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            required
+                          />
+                          <ErrorMessage error={formErrors.address?.city} />
+                        </div>
+                        
+                        {/* State and ZIP */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                            <input type="text" name="address.state" value={orderDetails.address.state}
-                                   onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              State <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              name="address.state"
+                              value={orderDetails.address.state}
+                              onChange={handleInputChange}
+                              className={`w-full p-2 border rounded-md ${
+                                formErrors.address?.state ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                              required
+                            />
+                            <ErrorMessage error={formErrors.address?.state} />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                            <input type="text" name="address.zipCode" value={orderDetails.address.zipCode}
-                                   onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              ZIP Code <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              name="address.zipCode"
+                              value={orderDetails.address.zipCode}
+                              onChange={handleInputChange}
+                              className={`w-full p-2 border rounded-md ${
+                                formErrors.address?.zipCode ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                              required
+                            />
+                            <ErrorMessage error={formErrors.address?.zipCode} />
                           </div>
+                        </div>
+                        
+                        {/* Delivery Instructions */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Delivery Instructions (Optional)
+                          </label>
+                          <textarea
+                            name="address.instructions"
+                            value={orderDetails.address.instructions || ''}
+                            onChange={handleInputChange}
+                            placeholder="E.g., Doorbell doesn't work, please call..."
+                            className="w-full p-2 border border-gray-300 rounded-md h-20"
+                          />
                         </div>
                       </div>
                     </div>
@@ -326,7 +659,7 @@ const Checkout = () => {
                   
                   <div className="space-y-4">
                     <h3 className="font-medium">Delivery Time</h3>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
                       <label className={`flex-1 cursor-pointer border rounded-md p-4 flex items-center ${
                         orderDetails.deliveryTime === 'asap' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
                       }`}>
@@ -353,25 +686,55 @@ const Checkout = () => {
                     </div>
                     
                     {orderDetails.deliveryTime === 'scheduled' && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                          <input type="date" name="scheduledDate" value={orderDetails.scheduledDate}
-                                 onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" 
-                                 min={new Date().toISOString().split('T')[0]} required />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            name="scheduledDate"
+                            value={orderDetails.scheduledDate}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.scheduledDate ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            min={new Date().toISOString().split('T')[0]}
+                            required
+                          />
+                          <ErrorMessage error={formErrors.scheduledDate} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                          <select name="scheduledTime" value={orderDetails.scheduledTime}
-                                  onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md" required>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Time <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="scheduledTime"
+                            value={orderDetails.scheduledTime}
+                            onChange={handleInputChange}
+                            className={`w-full p-2 border rounded-md ${
+                              formErrors.scheduledTime ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            required
+                          >
                             <option value="">Select time</option>
                             <option value="11:00 AM">11:00 AM</option>
                             <option value="11:30 AM">11:30 AM</option>
                             <option value="12:00 PM">12:00 PM</option>
                             <option value="12:30 PM">12:30 PM</option>
                             <option value="1:00 PM">1:00 PM</option>
-                            {/* Add more time options as needed */}
+                            <option value="1:30 PM">1:30 PM</option>
+                            <option value="2:00 PM">2:00 PM</option>
+                            <option value="5:00 PM">5:00 PM</option>
+                            <option value="5:30 PM">5:30 PM</option>
+                            <option value="6:00 PM">6:00 PM</option>
+                            <option value="6:30 PM">6:30 PM</option>
+                            <option value="7:00 PM">7:00 PM</option>
+                            <option value="7:30 PM">7:30 PM</option>
+                            <option value="8:00 PM">8:00 PM</option>
+                            <option value="8:30 PM">8:30 PM</option>
                           </select>
+                          <ErrorMessage error={formErrors.scheduledTime} />
                         </div>
                       </div>
                     )}
@@ -431,15 +794,23 @@ const Checkout = () => {
                   </div>
                   
                   
+
+                  
                   <div className="pt-4">
-                    <label className="flex items-center text-sm">
-                      <input type="checkbox" name="termsAccepted" checked={orderDetails.termsAccepted}
-                             onChange={handleInputChange} className="h-4 w-4 text-blue-600 mr-2" />
-                      <span className="text-gray-700">
+                    <label className={`flex items-center text-sm ${formErrors.termsAccepted ? 'text-red-500' : 'text-gray-700'}`}>
+                      <input 
+                        type="checkbox" 
+                        name="termsAccepted" 
+                        checked={orderDetails.termsAccepted}
+                        onChange={handleInputChange} 
+                        className={`h-4 w-4 mr-2 ${formErrors.termsAccepted ? 'text-red-500' : 'text-blue-600'}`} 
+                      />
+                      <span>
                         I agree to the <a href="/terms" className="text-blue-600">terms and conditions</a> 
                         and <a href="/privacy" className="text-blue-600">privacy policy</a>
                       </span>
                     </label>
+                    <ErrorMessage error={formErrors.termsAccepted} />
                   </div>
                 </div>
               )}
@@ -483,13 +854,13 @@ const Checkout = () => {
               
               <button
                 onClick={handlePlaceOrder}
-                disabled={cartItems.length === 0}
+                disabled={cartItems.length === 0 || isProcessing}
                 className={`w-full mt-6 py-3 rounded-md flex items-center justify-center
-                  ${cartItems.length === 0 
+                  ${cartItems.length === 0 || isProcessing
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
               >
-                {cartItems.length === 0 ? 'Cart is Empty' : 'Place Order'}
+                {isProcessing ? 'Processing...' : cartItems.length === 0 ? 'Cart is Empty' : 'Place Order'}
               </button>
               
               <div className="mt-6 flex items-center justify-center text-xs text-gray-500">

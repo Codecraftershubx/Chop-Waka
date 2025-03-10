@@ -57,7 +57,7 @@ const ServicesSection = () => {
             
             <div className="px-8 pb-8 mt-auto">
               <a 
-                href="/order" 
+                href="/menu" 
                 className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md transition-colors w-full"
               >
                 <span className="font-medium">Order Now</span>
@@ -135,7 +135,7 @@ const ServicesSection = () => {
             
             <div className="px-8 pb-8 mt-auto">
               <a 
-                href="/events" 
+                href="/event" 
                 className="flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white py-3 px-6 rounded-md transition-colors w-full"
               >
                 <span className="font-medium">Plan Your Event</span>
