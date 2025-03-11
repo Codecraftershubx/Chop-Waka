@@ -1,18 +1,33 @@
 import express from 'express';
 import cors from 'cors';
+import morgan from 'morgan';
+import { errorHandler } from './api/middlewares/error.js';
+import routes from './api/routes/index.js';
+import config from './config/index.js';
 
 const app = express();
+
+// Body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Enable CORS
 app.use(cors());
 
-// Sample menu data
-const menuItems = [
-  { id: 1, name: "Margherita Pizza", price: 12.99, category: "pizza" },
-  { id: 2, name: "Caesar Salad", price: 8.99, category: "salads" }
-];
+// Logging middleware in development
+if (config.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
-// API endpoint
-app.get('/api/menu', (req, res) => {
-  res.json(menuItems);
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP' });
 });
+
+// Mount routes
+app.use('/api/v1', routes);
+
+// Error handler middleware (should be last)
+app.use(errorHandler);
 
 export default app;
