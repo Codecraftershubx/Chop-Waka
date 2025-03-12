@@ -3,4 +3,4 @@ import MenuItem from './MenuItem.js';
 import Order from './Order.js';
 import Reservation from './Reservation.js';
 
-export { User, MenuItem, Order, Reservation };
+export default { User, MenuItem, Order, Reservation };

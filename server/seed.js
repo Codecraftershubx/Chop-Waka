@@ -1,31 +1,18 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import User from '../../models/User.js';
-import connectDB from '../../config/db.js';
-import config from '../../config/index.js';
-import logger from '../../utils/logger.js';
+import User from './models/User.js';
 
-// Log current date and time in required format
-const currentDate = new Date();
-const formattedDate = currentDate.toISOString().replace(/T/, ' ').substr(0, 19);
-logger.info(`Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): ${formattedDate}`);
-logger.info(`Current User's Login: megafemworld`);
+// The main app can already access the environment variables, 
+// so we'll leverage that instead of trying to load them again
 
-const runSeeder = async () => {
+const seedUsers = async () => {
   try {
-    // First, check if MONGO_URI is defined
-    if (!config.MONGO_URI) {
-      logger.error('MONGO_URI is not defined in config. Check your environment variables.');
-      process.exit(1);
-    }
-
-    // Connect to database
-    await connectDB();
-    
-    logger.info('Connected to MongoDB');
+    console.log('Starting user seeder...');
+    console.log('Current Date and Time:', new Date().toISOString().replace('T', ' ').substr(0, 19));
+    console.log('User: megafemworld');
     
     // Clear existing users
-    logger.info('Clearing existing users...');
+    console.log('Clearing existing users...');
     await User.deleteMany({});
     
     // Create admin user
@@ -79,40 +66,58 @@ const runSeeder = async () => {
       role: 'customer'
     });
 
-    logger.info('Users seeded successfully!');
-    logger.info('Created users:');
-    logger.info(`- Admin: ${admin.email}`);
-    logger.info(`- Manager: ${manager.email}`);
-    logger.info(`- Staff: ${staff.email}`);
-    logger.info(`- Customers: ${customer1.email}, ${customer2.email}, ${customer3.email}`);
-    
-    // Close the connection
-    logger.info('Disconnecting from MongoDB...');
-    await mongoose.connection.close();
-    logger.info('MongoDB connection closed');
+    console.log('Users seeded successfully!');
+    console.log(`Created ${await User.countDocuments()} users`);
     
     return { admin, manager, staff, customers: [customer1, customer2, customer3] };
   } catch (error) {
-    logger.error(`Error seeding users: ${error.message}`);
-    // Close the connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-    process.exit(1);
+    console.error(`Error seeding users: ${error.message}`);
+    throw error;
   }
 };
 
-// Run the seeder if this file is executed directly
+// Main seeding function
+const seedDatabase = async () => {
+  try {
+    // We'll assume the MongoDB connection is already established
+    // by importing and using your standard connection logic
+    // but we won't close it at the end of each seeder
+    
+    console.log('Starting database seeding...');
+    
+    // Run user seeder
+    await seedUsers();
+    
+    // Add other seeders here
+    // await seedCategories();
+    // await seedMenuItems();
+    
+    console.log('All seeding completed successfully!');
+  } catch (error) {
+    console.error(`Database seeding failed: ${error.message}`);
+  } finally {
+    // Close MongoDB connection
+    await mongoose.disconnect();
+    console.log('MongoDB connection closed');
+  }
+};
+
+// Import your normal database connection setup
+import connectDB from './config/db.js';
+
+// Run the seeder if the file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runSeeder()
+  // Connect to the database first
+  connectDB()
+    .then(() => seedDatabase())
     .then(() => {
-      logger.info('Seeder executed successfully');
+      console.log('Seeding process completed successfully');
       process.exit(0);
     })
     .catch((error) => {
-      logger.error('Seeder failed with error:', error);
+      console.error('Seeding process failed:', error);
       process.exit(1);
     });
 }
 
-export default runSeeder;
+export { seedUsers, seedDatabase };
