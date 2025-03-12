@@ -1,4 +1,5 @@
 import { User } from '../../models/index.js';
+import bcrypt from 'bcryptjs';
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
@@ -7,11 +8,15 @@ export const register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // Encrypt password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     // Create user
     const user = await User.create({
       name,
       email,
-      password,
+      password: hashedPassword,
       role
     });
 
@@ -48,7 +53,7 @@ export const login = async (req, res, next) => {
     }
 
     // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({

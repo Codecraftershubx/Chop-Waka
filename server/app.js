@@ -20,9 +20,9 @@ if (config.NODE_ENV === 'development') {
 }
 
 // Health check route
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'UP' });
-});
+// app.get('/health', (req, res) => {
+//   res.status(200).json({ status: 'UP' });
+// });
 
 // Mount routes
 app.use('/api/v1', routes);
