@@ -1,29 +1,45 @@
 import express from 'express';
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshToken,
+  getUserProfile,
+  updateUserProfile,
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  forgotPassword,
+  resetPassword,
+  changeUserRole
+} from '../controllers/userController.js';
 import { protect, authorize } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Routes will be implemented later
-router.use(protect);
-router.use(authorize('admin'));
+// Public routes
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+router.post('/refresh-token', refreshToken);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:resetToken', resetPassword);
 
-router.route('/')
-  .get((req, res) => {
-    res.status(200).json({ message: 'Get all users' });
-  })
-  .post((req, res) => {
-    res.status(201).json({ message: 'Create user' });
-  });
+// Protected routes
+router.use(protect); // All routes below this require authentication
 
+// User profile routes
+router.get('/profile', getUserProfile);
+router.put('/profile', updateUserProfile);
+router.post('/logout', logoutUser);
+
+// Admin routes
+router.get('/', authorize('admin', 'manager'), getUsers);
 router.route('/:id')
-  .get((req, res) => {
-    res.status(200).json({ message: `Get user ${req.params.id}` });
-  })
-  .put((req, res) => {
-    res.status(200).json({ message: `Update user ${req.params.id}` });
-  })
-  .delete((req, res) => {
-    res.status(200).json({ message: `Delete user ${req.params.id}` });
-  });
+  .get(authorize('admin', 'manager'), getUserById)
+  .put(authorize('admin'), updateUser)
+  .delete(authorize('admin'), deleteUser);
+
+router.put('/:id/role', authorize('admin'), changeUserRole);
 
 export default router;

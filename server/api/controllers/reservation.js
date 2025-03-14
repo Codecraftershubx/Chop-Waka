@@ -1,4 +1,4 @@
-import { Reservation } from '../../models/index.js';
+import Reservation from '../../models/index.js';
 
 // @desc    Create new reservation
 // @route   POST /api/v1/reservations
