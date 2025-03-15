@@ -96,7 +96,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Find user by email (case insensitive)
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-  
+
   // Check if user exists and password matches
   if (user && (await bcrypt.compare(password, user.password))) {
     logger.info(`User logged in: ${user._id} (${email})`);

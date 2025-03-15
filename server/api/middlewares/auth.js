@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
-import User from '../models/User.js';
-import config from '../config/index.js';
-import logger from '../utils/logger.js';
+import User from '../../models/User.js';
+import config from '../../config/index.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Protect routes - Authentication middleware
