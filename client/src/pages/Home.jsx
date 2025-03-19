@@ -1,13 +1,14 @@
 import React from "react";
 import Hero from '../components/Hero';
-import ServicesSection from "../components/ServicesSection";
+import FoodMenu from "../components/FoodMenu";
+
 
 
 
 const HomePage = () => {
     return (
     <><Hero />
-    <ServicesSection /></>
+    <FoodMenu /></>
     );
 }
 

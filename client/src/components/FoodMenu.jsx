@@ -283,7 +283,7 @@ const FoodMenu = () => {
       <div className="container mx-auto max-w-7xl">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-playfair font-bold mb-2">Our Menu</h1>
+            <h1 className="text-3xl md:text-4xl font-playfair font-bold mb-2 text-center">Our Menu</h1>
             <p className="text-gray-600">Explore our delicious offerings</p>
           </div>
           

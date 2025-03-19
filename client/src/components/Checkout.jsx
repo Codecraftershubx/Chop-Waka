@@ -59,6 +59,7 @@ const Checkout = () => {
   // Get the summary from CartContext
   const summary = getCartSummary();
   const cartItems = cart || []; // Ensure cartItems is always an array
+  console.log(cartItems);
   
   // If cart is empty and not after order completion, redirect to menu
   useEffect(() => {

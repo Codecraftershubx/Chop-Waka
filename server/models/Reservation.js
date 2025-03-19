@@ -97,4 +97,6 @@ ReservationSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.model('Reservation', ReservationSchema);
+const Reservation = mongoose.model('Reservation', ReservationSchema);
+
+export default Reservation;

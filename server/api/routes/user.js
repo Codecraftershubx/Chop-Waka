@@ -4,13 +4,10 @@ import {
   refreshToken,
   getUserProfile,
   updateUserProfile,
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
   forgotPassword,
   resetPassword,
-  changeUserRole
+  getUserAllOrders,
+  getUserOrder
 } from '../controllers/userController.js';
 import { protect, authorize } from '../middlewares/auth.js';
 
@@ -31,13 +28,19 @@ router.get('/profile', getUserProfile);
 router.put('/profile', updateUserProfile);
 router.post('/logout', logoutUser);
 
-// Admin routes
-router.get('/', authorize('admin', 'manager'), getUsers);
-router.route('/:id')
-  .get(authorize('admin', 'manager'), getUserById)
-  .put(authorize('admin'), updateUser)
-  .delete(authorize('admin'), deleteUser);
+// User records
 
-router.put('/:id/role', authorize('admin'), changeUserRole);
+router.get('/order', getUserAllOrders);
+router.get('/order/:id', getUserOrder)
+// router.get('/reservation');
+
+// Admin routes
+// router.get('/', authorize('admin', 'manager'), getUsers);
+// router.route('/:id')
+//   .get(authorize('admin', 'manager'), getUserById)
+//   .put(authorize('admin'), updateUser)
+//   .delete(authorize('admin'), deleteUser);
+
+// router.put('/:id/role', authorize('admin'), changeUserRole);
 
 export default router;

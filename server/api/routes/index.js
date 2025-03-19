@@ -5,6 +5,7 @@ import order from './order.js';
 import user from './user.js';
 import contact from './contact.js';
 import reservation from './reservation.js';
+import admin from './admin.js'
 
 const router = express.Router();
 
@@ -12,8 +13,9 @@ const router = express.Router();
 router.use('/auth', auth);
 router.use('/menu', menu);
 router.use('/orders', order);
-router.use('/users', user);
+router.use('/user', user);
 router.use('/contact', contact);
 router.use('/reservations', reservation);
+router.use('/admin', admin);
 
 export default router;

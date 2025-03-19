@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User from '../../models/User.js';
+import Order from '../../models/Order.js';
 import { sendEmail } from '../../utils/emailService.js';
 import logger from '../../utils/logger.js';
 import config from '../../config/index.js';
@@ -673,6 +674,66 @@ const generateRefreshToken = (id) => {
   });
 };
 
+// @desc  Get user all Order Records
+// @route /api/v1/user/orders
+// @access private
+
+const getUserAllOrders = asyncHandler(async(req, res) => {
+  const userloggedin = await User.findById(req.user._id);
+
+  if (!userloggedin) {
+    return res.status(404).json({
+      success: false,
+      message: 'Login to access your order records'
+    });
+  }
+
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const skip = (page - 1) * limit
+  const filter = {user: req.user._id};
+
+  const orders = await Order.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Order.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    count: orders.length,
+    total,
+    pagination: {
+      currentPAge: page,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + orders.length < total
+    },
+    data: orders
+  });
+});
+
+// @desc    Get single order detail
+// @route   GET /api/v1/order/:id
+// @access  Private (User)
+
+const getUserOrder = asyncHandler(async(req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order || order.user !== req.user._id) {
+    return res.status(200).json({
+      success: false,
+      message: 'Order not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: order
+  })
+
+
+})
+
 export {
   registerUser,
   loginUser,
@@ -686,5 +747,7 @@ export {
   deleteUser,
   forgotPassword,
   resetPassword,
-  changeUserRole
+  changeUserRole,
+  getUserAllOrders,
+  getUserOrder
 };

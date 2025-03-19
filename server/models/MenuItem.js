@@ -25,7 +25,7 @@ const MenuItemSchema = new mongoose.Schema({
   cuisine: {
     type: String,
     required: [true, 'Please specify cuisine type'],
-    enum: ['Italian', 'Mexican', 'Indian', 'Chinese', 'American', 'Japanese', 'Mediterranean', 'Thai']
+    enum: ['Yoruba', 'Igbo', 'Hausa', 'Edo', 'American']
   },
   availability: {
     type: String,
@@ -39,16 +39,16 @@ const MenuItemSchema = new mongoose.Schema({
     max: [5, 'Rating cannot be above 5'],
     default: 0
   },
-  reviews: {
-    count: {
-      type: Number,
-      default: 0
-    },
-    list: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Review'
-    }]
-  },
+  // reviews: {
+  //   count: {
+  //     type: Number,
+  //     default: 0
+  //   },
+  //   list: [{
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: 'Review'
+  //   }]
+  // },
   isCustomizable: {
     type: Boolean,
     default: false

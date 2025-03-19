@@ -26,7 +26,6 @@ const CartPage = () => {
   const currentUser = "megafemworld";
   
   // Local state for promo code
-  const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
@@ -35,29 +34,7 @@ const CartPage = () => {
   const { subtotal, tax, total, itemCount, deliveryFee } = getCartSummary();
   
   // Handle promo code submission
-  const handleApplyPromoCode = (e) => {
-    e.preventDefault();
-    
-    if (!promoCode.trim()) {
-      setPromoError('Please enter a promo code');
-      return;
-    }
-    
-    setIsApplyingPromo(true);
-    setPromoError('');
-    setPromoSuccess('');
-    
-    // Simulating API call delay
-    setTimeout(() => {
-      if (promoCode.toUpperCase() === 'WELCOME10') {
-        setPromoSuccess('10% discount applied!');
-      } else {
-        setPromoError('Invalid or expired promo code');
-      }
-      setIsApplyingPromo(false);
-    }, 1000);
-  };
-  
+
   // Handle confirm clear cart
   const handleClearCart = () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
@@ -225,45 +202,6 @@ const CartPage = () => {
                 </div>
                 
                 {/* Promo Code */}
-                <div className="pt-4">
-                  <form onSubmit={handleApplyPromoCode} className="flex">
-                    <input
-                      type="text"
-                      placeholder="Promo code"
-                      className="flex-1 p-3 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      disabled={isApplyingPromo}
-                    />
-                    <button
-                      type="submit"
-                      className={`px-4 rounded-r-md font-medium ${
-                        isApplyingPromo
-                          ? 'bg-gray-300 text-gray-500'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                      disabled={isApplyingPromo}
-                    >
-                      {isApplyingPromo ? 'Applying...' : 'Apply'}
-                    </button>
-                  </form>
-                  
-                  {promoError && (
-                    <div className="mt-1 text-sm flex items-center text-red-600">
-                      <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                      {promoError}
-                    </div>
-                  )}
-                  
-                  {promoSuccess && (
-                    <div className="mt-1 text-sm flex items-center text-green-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {promoSuccess}
-                    </div>
-                  )}
-                </div>
                 
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <div className="flex justify-between">
