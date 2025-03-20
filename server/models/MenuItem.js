@@ -68,6 +68,20 @@ const MenuItemSchema = new mongoose.Schema({
         default: 0
       }
     }],
+    soups: [{
+      id: {
+        type: String,
+        required: true
+      },
+      name: {
+        type: String,
+        required: true
+      },
+      priceAdjustment: {
+        type: Number,
+        default: 0
+      }
+    }],
     toppings: [{
       id: {
         type: Number,

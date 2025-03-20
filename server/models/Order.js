@@ -24,6 +24,20 @@ const OrderSchema = new mongoose.Schema({
       }
     }
   ],
+  deliveryDetails: {
+    method: {
+      type: String,
+      required: true,
+    },
+    time: {
+      type: String,
+      required: true
+    },
+    address: {
+      type: String,
+      required: false
+    }
+  },
   totalAmount: {
     type: Number,
     required: true

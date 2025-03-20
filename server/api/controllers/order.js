@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from '../../utils/asyncHandler.js';
 import Order from '../../models/Order.js'
+import MenuItem from '../../models/MenuItem.js';
 import AppError from '../../utils/appError.js';
 
 // @desc    create a new order
@@ -8,20 +9,48 @@ import AppError from '../../utils/appError.js';
 // @access  Public
 
 export const createOrder = asyncHandler(async (req, res) => {
-    const {delivery_method,
-        delivery_detail,
-        delivery_time,
-        payment_method,
-        cartItems
-    } = req.body;
+    const {cartItems, deliveryDetails, payment} = req.body;
+
+    let totalAmount = 0;
+
+    cartItems.map(async (item, amount = 0 ) => {
+        const itemInfo = await MenuItem.findById(item.id);
+        amount += itemInfo.basePrice;
+
+        if (item.customizations) {
+            if (item.customizations.size) {
+                const size = itemInfo.customizationOptions.sizes[item.customizations.size];
+                amount += size.priceAdjustment;
+            }
+
+            if (item.customizations.soup) {
+                const soup = itemInfo.customizationOptions.soup[item.customizations.soup];
+                amount += soup.priceAdjustment;
+            }
+
+            if (item.customizations.toppings) {
+                item.customizations.toppings.forEach(topping => {
+                    toppingDetail = itemInfo.customizationOptions.toppings[topping];
+                    amount += toppingDetail.price;
+                });
+            }
+            
+        }
+
+        totalAmount += amount;
+    })
 
     const order = await Order.create({
-        cartItems,
-        delivery_detail,
-        delivery_time,
-        payment_method,
-        status:'pending'
+        user: req.user._id,
+        items: cartItems,
+        deliveryDetails: delivery_detail,
+        totalAmount: totalAmount,
+        paymentMethod: payment_method,
+        status:'pending',
+        paymentStatus: 'pending',
+        specialInstructions: ''
     })
+
 
     if (!order) {
         return new AppError('Order cannot be created', 404);

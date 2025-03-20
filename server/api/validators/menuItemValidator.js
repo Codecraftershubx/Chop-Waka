@@ -24,7 +24,7 @@ export const validateMenuItem = [
   body('cuisine')
     .trim()
     .notEmpty().withMessage('Cuisine is required')
-    .isIn(['Italian', 'Mexican', 'Indian', 'Chinese', 'American', 'Japanese', 'Mediterranean', 'Thai'])
+    .isIn(['Yoruba', 'Igbo', 'Hausa', 'Edo', 'American'])
     .withMessage('Invalid cuisine type'),
   
   body('availability')
