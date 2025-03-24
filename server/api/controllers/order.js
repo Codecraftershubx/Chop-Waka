@@ -1,4 +1,3 @@
-import express from 'express';
 import asyncHandler from '../../utils/asyncHandler.js';
 import Order from '../../models/Order.js'
 import MenuItem from '../../models/MenuItem.js';
@@ -9,47 +8,87 @@ import AppError from '../../utils/appError.js';
 // @access  Public
 
 export const createOrder = asyncHandler(async (req, res) => {
-    const {cartItems, deliveryDetails, payment} = req.body;
+    const {cartItems, deliveryDetails, paymentMethod} = req.body;
+
+    if (!cartItems || !deliveryDetails || !paymentMethod) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide all the required fields'
+        });
+    }
 
     let totalAmount = 0;
 
-    cartItems.map(async (item, amount = 0 ) => {
+    const orderItems = [];
+
+    await Promise.all(cartItems.items.map(async (item) => {
+
         const itemInfo = await MenuItem.findById(item.id);
-        amount += itemInfo.basePrice;
 
-        if (item.customizations) {
-            if (item.customizations.size) {
-                const size = itemInfo.customizationOptions.sizes[item.customizations.size];
-                amount += size.priceAdjustment;
-            }
-
-            if (item.customizations.soup) {
-                const soup = itemInfo.customizationOptions.soup[item.customizations.soup];
-                amount += soup.priceAdjustment;
-            }
-
-            if (item.customizations.toppings) {
-                item.customizations.toppings.forEach(topping => {
-                    toppingDetail = itemInfo.customizationOptions.toppings[topping];
-                    amount += toppingDetail.price;
-                });
-            }
-            
+        if (!itemInfo) {
+            return new AppError('Menu item not found', 404);
         }
 
-        totalAmount += amount;
-    })
+        let itemPrice = itemInfo.basePrice;
+        const customizations = item.customizations || {};
+
+        if (customizations.size) {
+            const selectedSize = itemInfo.customizationOptions.sizes.find(
+                size => size.id == customizations.size);
+            if (selectedSize) {
+                itemPrice += selectedSize.priceAdjustment;
+            }
+        }
+
+        if (customizations.soup) {
+            const selectedSoup = itemInfo.customizationOptions.soups.find(
+                soup => soup.id == customizations.soup
+            );
+            if (selectedSoup) {
+                itemPrice += selectedSoup.priceAdjustment;
+            }
+        }
+
+        if (customizations.toppings && Array.isArray(customizations.toppings)) {
+            customizations.toppings.forEach(toppingId => {
+                const selectedTopping = itemInfo.customizationOptions.toppings.find(
+                    topping => topping.id == toppingId
+                );
+                if (selectedTopping) {
+                    itemPrice += selectedTopping.price;
+                }
+            });
+        }
+        const itemTotal = itemPrice * item.quantity;
+        totalAmount += itemTotal;
+
+        orderItems.push({
+            menuItem: itemInfo._id,
+            menuItemData: {
+                name: itemInfo.name,
+                price: itemInfo.basePrice
+            },
+            customizations: customizations,
+            quantity: item.quantity,
+            price: itemPrice,
+            total: itemTotal
+        });
+    }));
+
+    console.log(orderItems);
+
+
 
     const order = await Order.create({
         user: req.user._id,
-        items: cartItems,
-        deliveryDetails: delivery_detail,
-        totalAmount: totalAmount,
-        paymentMethod: payment_method,
-        status:'pending',
+        items: orderItems,
+        deliveryDetails,
+        totalAmount,
+        paymentMethod,
+        status: 'pending',
         paymentStatus: 'pending',
-        specialInstructions: ''
-    })
+        specialInstructions: req.body.specialInstructions || ''
+    });
 
 
     if (!order) {

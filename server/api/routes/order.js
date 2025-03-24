@@ -1,26 +1,15 @@
 import express from 'express';
-import { protect, authorize } from '../middlewares/auth.js';
+import { protect } from '../middlewares/auth.js';
+import { createOrder, getAllOrders, getOrderDetail } from '../controllers/order.js';
 
 const router = express.Router();
 
 // Routes will be implemented later
+router.use(protect);
 router.route('/')
-  .get(protect, (req, res) => {
-    res.status(200).json({ message: 'Get all orders' });
-  })
-  .post(protect, (req, res) => {
-    res.status(201).json({ message: 'Create order' });
-  });
+  .get(getAllOrders)
+  .post(createOrder);
 
-router.route('/:id')
-  .get(protect, (req, res) => {
-    res.status(200).json({ message: `Get order ${req.params.id}` });
-  })
-  .put(protect, (req, res) => {
-    res.status(200).json({ message: `Update order ${req.params.id}` });
-  })
-  .delete(protect, authorize('admin', 'manager'), (req, res) => {
-    res.status(200).json({ message: `Delete order ${req.params.id}` });
-  });
+router.get('/:id', getOrderDetail);
 
 export default router;

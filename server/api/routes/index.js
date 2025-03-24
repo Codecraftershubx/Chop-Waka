@@ -12,7 +12,7 @@ const router = express.Router();
 // Mount routes
 router.use('/auth', auth);
 router.use('/menu', menu);
-router.use('/orders', order);
+router.use('/order', order);
 router.use('/user', user);
 router.use('/contact', contact);
 router.use('/reservations', reservation);

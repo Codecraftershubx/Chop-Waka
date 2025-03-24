@@ -11,7 +11,16 @@ const OrderSchema = new mongoose.Schema({
       menuItem: {
         type: mongoose.Schema.ObjectId,
         ref: 'MenuItem',
-        required: true
+        required: false // No longer required to handle deleted menu items
+      },
+      menuItemData: {
+        name: String,
+        price: Number
+        // Storing key menu item data directly in the order
+      },
+      customizations: {
+        type: mongoose.Schema.Types.Mixed, // Allows flexible customization structure
+        default: {}
       },
       quantity: {
         type: Number,
