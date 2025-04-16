@@ -1,7 +1,9 @@
 import MenuItem from '../../models/MenuItem.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import AppError from '../../utils/appError.js';
+import { generateCacheKey } from '../../services/cacheKeyGen.js';
 import connectRedis from '../../config/redis.js';
+import logger from '../../utils/logger.js';
 
 const CACHE_TTL = 1800;
 
@@ -9,6 +11,19 @@ const CACHE_TTL = 1800;
 // @route   GET /api/v1/menu
 // @access  Public
 export const getAllMenuItems = asyncHandler(async (req, res) => {
+  const cacheKey = generateCacheKey(req, 'menuItems');
+
+  const cachedData = await connectRedis.get(cacheKey);
+  if (cachedData) {
+    logger.info(`Data found in Redis: ${cacheKey}`);
+    const parseData = JSON.parse(cachedData)
+    return res.status(200).json({
+      success: true,
+      source: 'cache',
+      ...parseData
+    });
+  }
+
   // Build query based on filter parameters
   let queryObj = {};
   
@@ -64,9 +79,8 @@ export const getAllMenuItems = asyncHandler(async (req, res) => {
     .limit(limit);
   
   const total = await MenuItem.countDocuments(queryObj).select('-createdAt');
-  
-  res.status(200).json({
-    success: true,
+
+  const responseData = {
     count: menuItems.length,
     total,
     pagination: {
@@ -75,6 +89,22 @@ export const getAllMenuItems = asyncHandler(async (req, res) => {
       hasMore: skip + menuItems.length < total
     },
     data: menuItems
+  };
+
+  try {
+    await connectRedis.setEx(
+      cacheKey,
+      CACHE_TTL,
+      JSON.stringify(responseData)
+    );
+    logger.info(`Added to Redis Successfully: ${cacheKey}`);
+  } catch (err) {
+    logger.error(`Redis cache set error: ${err.message}`);
+  }
+  
+  res.status(200).json({
+    success: true,
+    ...responseData
   });
 });
 
@@ -82,10 +112,39 @@ export const getAllMenuItems = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/menu/:id
 // @access  Public
 export const getMenuItem = asyncHandler(async (req, res, next) => {
+  const itemId = req.params.id;
+  const cacheKey = `menu:item:${itemId}`;
+
+  try {
+    const cacheItem = await connectRedis.get(cacheKey);
+
+    if (cacheItem) {
+      return res.status(200).json({
+        success: true,
+        source: 'cache',
+        data: JSON.parse(cacheItem)
+      });
+    }
+  } catch (err) {
+    logger.error(`Redis cache error: ${err.message}`);
+  }
+
+
   const menuItem = await MenuItem.findById(req.params.id);
   
   if (!menuItem) {
     return next(new AppError('Menu item not found', 404));
+  }
+
+  try {
+    await connectRedis.setEx(
+      cacheKey,
+      CACHE_TTL,
+      JSON.stringify(menuItem)
+    )
+    logger.info(`Add to redis ${cacheKey}`);
+  } catch (err) {
+    logger.error(`Redis cache set error: ${err.message}`);
   }
   
   res.status(200).json({
@@ -110,16 +169,25 @@ export const createMenuItem = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/menu/:id
 // @access  Private (Admin/Manager)
 export const updateMenuItem = asyncHandler(async (req, res, next) => {
-  let menuItem = await MenuItem.findById(req.params.id);
+  const itemId = req.params.id;
+  let menuItem = await MenuItem.findById(itemId);
   
   if (!menuItem) {
     return next(new AppError('Menu item not found', 404));
   }
   
-  menuItem = await MenuItem.findByIdAndUpdate(req.params.id, req.body, {
+  menuItem = await MenuItem.findByIdAndUpdate(itemId, req.body, {
     new: true,
     runValidators: true
   });
+
+  try {
+    await connectRedis.del(`menu:item:${itemId}`);
+    logger.info(`Deleted from Redis: menu:item:${itemId}`);
+  }
+  catch (err) {
+    logger.error(`Redis cache delete error: ${err.message}`);
+  }
   
   res.status(200).json({
     success: true,
@@ -131,13 +199,21 @@ export const updateMenuItem = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/menu/:id
 // @access  Private (Admin/Manager)
 export const deleteMenuItem = asyncHandler(async (req, res, next) => {
-  const menuItem = await MenuItem.findById(req.params.id);
+  const itemId = req.params.id;
+  const menuItem = await MenuItem.findById(itemId);
   
   if (!menuItem) {
     return next(new AppError('Menu item not found', 404));
   }
   
   await menuItem.deleteOne();
+  
+  try {
+    await connectRedis.del(`menu:item:${itemId}`);
+    logger.info(`Deleted from Redis: menu:item:${itemId}`);
+  } catch (err) {
+    logger.error(`Redis cache delete error: ${err.message}`);
+  }
   
   res.status(200).json({
     success: true,
