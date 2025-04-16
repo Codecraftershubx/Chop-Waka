@@ -1,6 +1,9 @@
 import MenuItem from '../../models/MenuItem.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import AppError from '../../utils/appError.js';
+import connectRedis from '../../config/redis.js';
+
+const CACHE_TTL = 1800;
 
 // @desc    Get all menu items with filtering
 // @route   GET /api/v1/menu
@@ -55,12 +58,12 @@ export const getAllMenuItems = asyncHandler(async (req, res) => {
     sort = { createdAt: -1 };
   }
   
-  const menuItems = await MenuItem.find(queryObj)
+  const menuItems = await MenuItem.find(queryObj).select('-createdAt')
     .sort(sort)
     .skip(skip)
     .limit(limit);
   
-  const total = await MenuItem.countDocuments(queryObj);
+  const total = await MenuItem.countDocuments(queryObj).select('-createdAt');
   
   res.status(200).json({
     success: true,

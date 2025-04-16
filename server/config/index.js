@@ -3,13 +3,15 @@ import dotenv from 'dotenv';
 // Load env vars
 dotenv.config();
 
+
 export default {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.PORT || 5000,
   MONGO_URI: process.env.MONGO_URI,
-  JWT_SECRET: process.env.JWT_SECRET,
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET || "qTYTE#@D++=Qop",
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "qTYTE#@D++=Qop",
   JWT_EXPIRE: process.env.JWT_EXPIRE || '30d',
+
   // Email settings
   EMAIL_USERNAME: process.env.EMAIL_USERNAME,
   EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,

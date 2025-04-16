@@ -546,6 +546,36 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 });
 
+
+/**
+ * @desc    ChangePassword
+ * @route   POST /api/users/change-password
+ * @access  Private USER
+ */
+
+// const ChangePassword = asyncHandler(async (req, res) => {
+//   const { old_password, new_password, confirm_password } = req.body;
+
+//   if (!old_password || !new_password || !confirm_password) {
+//     return res.status(401).json({
+//       success: false,
+//       message: 'All fields required'
+//     })
+//   if (req.user) {
+//     $user = 
+//   }
+//   else {
+//     return res.status(404).json({
+//       success: false,
+//       message: 'No user found'
+//     })
+//   }
+
+
+//   }
+// });
+
+
 /**
  * @desc    Reset password
  * @route   PUT /api/users/reset-password/:resetToken

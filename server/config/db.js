@@ -3,7 +3,10 @@ import logger from '../utils/logger.js';
 import config from './index.js';
 
 const connectDB = async () => {
+
   try {
+    // logger.info(`jwt: ${config.JWT_SECRET}`)
+    logger.info(`Connecting to Database URI: ${config.MONGO_URI}`)
     const conn = await mongoose.connect(config.MONGO_URI, {
       // These options are no longer needed in newer mongoose versions
       // but keeping them as comments for reference

@@ -2,12 +2,13 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import Order from '../../models/Order.js'
 import MenuItem from '../../models/MenuItem.js';
 import AppError from '../../utils/appError.js';
+import mongoose from 'mongoose';
 
 // @desc    create a new order
 // @route   POST /api/v1/order
 // @access  Public
 
-export const createOrder = asyncHandler(async (req, res) => {
+export const placeOrder = asyncHandler(async (req, res) => {
     const {cartItems, deliveryDetails, paymentMethod} = req.body;
 
     if (!cartItems || !deliveryDetails || !paymentMethod) {
@@ -106,6 +107,9 @@ export const createOrder = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/order
 // @access  privte (Admin)
 export const getAllOrders = asyncHandler(async (req, res) => {
+    if (!req.user) {
+        return new AppError('User not found', 404);
+    }
     const filterObj = {};
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
@@ -131,6 +135,9 @@ export const getAllOrders = asyncHandler(async (req, res) => {
         const hour = req.query.hour;
         filterObj.hour = {hour};
     }
+
+    const userId = req.user._id;
+    filterObj.user = userId;
 
     const orders = await Order.find(filterObj)
         .sort({ createdAt: -1})
@@ -161,7 +168,11 @@ export const getAllOrders = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/order/:id
 // @access  Private
 export const getOrderDetail = asyncHandler(async (req, res, next) => {
-    const orderDetail = await Order.findById(req.params.id);
+    const { id } = req.params;
+    if (!id) {
+        return next(new AppError('Order ID not provided', 400));
+    }
+    const orderDetail = await Order.findById(id);
 
     if (!orderDetail) {
         return next(new AppError('Order detail not found', 404));

@@ -24,6 +24,7 @@ import {
   changeUserRole
 } from '../controllers/userController.js';
 import { validateMenuItem } from '../validators/menuItemValidator.js';
+import { getAllOrders, getOrderDetail, deleteOrder } from '../controllers/order.js';
   
 
 const router = express.Router();
@@ -51,12 +52,11 @@ router.route('/menu/:id')
   .put(validateMenuItem, updateMenuItem)
   .delete(validateMenuItem, deleteMenuItem);
 
-//Order
-// router.get('/order')
-// router.route('/order/:id')
-//   .get(getOrder)
-//   .patch(updateOrderStatus)
-//   .delete(deleteOrder);
+// Order
+router.get('/order', authorize('admin', 'manager'), getAllOrders)
+router.route('/order/:id', authorize('admin', 'manager'))
+  .get(getOrderDetail)
+  .delete(deleteOrder);
 
 //Reservation
 router.get('/reservation', getReservations);

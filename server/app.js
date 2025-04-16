@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { errorHandler } from './api/middlewares/error.js';
 import routes from './api/routes/index.js';
 import config from './config/index.js';
+import logger from './utils/logger.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cors());
 // Logging middleware in development
 if (config.NODE_ENV === 'development') {
   app.use(morgan('dev'));
+  logger.info(`Running node in ${config.NODE_ENV}`)
 }
 
 // Health check route
