@@ -1,11 +1,12 @@
 import MenuItem from '../../models/MenuItem.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import AppError from '../../utils/appError.js';
-import { generateCacheKey } from '../../services/cacheKeyGen.js';
+import { generateCacheKey } from '../services/cacheKeyGen.js';
 import connectRedis from '../../config/redis.js';
 import logger from '../../utils/logger.js';
 
 const CACHE_TTL = 1800;
+const redisClient = await connectRedis();
 
 // @desc    Get all menu items with filtering
 // @route   GET /api/v1/menu
@@ -13,7 +14,7 @@ const CACHE_TTL = 1800;
 export const getAllMenuItems = asyncHandler(async (req, res) => {
   const cacheKey = generateCacheKey(req, 'menuItems');
 
-  const cachedData = await connectRedis.get(cacheKey);
+  const cachedData = await redisClient.get(cacheKey);
   if (cachedData) {
     logger.info(`Data found in Redis: ${cacheKey}`);
     const parseData = JSON.parse(cachedData)
@@ -92,7 +93,7 @@ export const getAllMenuItems = asyncHandler(async (req, res) => {
   };
 
   try {
-    await connectRedis.setEx(
+    await redisClient.setEx(
       cacheKey,
       CACHE_TTL,
       JSON.stringify(responseData)
@@ -116,7 +117,7 @@ export const getMenuItem = asyncHandler(async (req, res, next) => {
   const cacheKey = `menu:item:${itemId}`;
 
   try {
-    const cacheItem = await connectRedis.get(cacheKey);
+    const cacheItem = await redisClient.get(cacheKey);
 
     if (cacheItem) {
       return res.status(200).json({
@@ -137,7 +138,7 @@ export const getMenuItem = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    await connectRedis.setEx(
+    await redisClient.setEx(
       cacheKey,
       CACHE_TTL,
       JSON.stringify(menuItem)
@@ -182,7 +183,7 @@ export const updateMenuItem = asyncHandler(async (req, res, next) => {
   });
 
   try {
-    await connectRedis.del(`menu:item:${itemId}`);
+    await redisClient.del(`menu:item:${itemId}`);
     logger.info(`Deleted from Redis: menu:item:${itemId}`);
   }
   catch (err) {
@@ -209,7 +210,7 @@ export const deleteMenuItem = asyncHandler(async (req, res, next) => {
   await menuItem.deleteOne();
   
   try {
-    await connectRedis.del(`menu:item:${itemId}`);
+    await redisClient.del(`menu:item:${itemId}`);
     logger.info(`Deleted from Redis: menu:item:${itemId}`);
   } catch (err) {
     logger.error(`Redis cache delete error: ${err.message}`);

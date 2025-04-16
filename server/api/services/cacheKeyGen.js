@@ -1,8 +1,8 @@
-import logger from '../../utils/logger.js';
 
 /**
  * Generate a cache key based on request parameters
  * @param {Object} req - express request object
+ * @param {String} prefix - Prefix for the cache key
  * @returns {String} - Cache key
  */
 
