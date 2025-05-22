@@ -37,9 +37,6 @@ const FoodMenu = () => {
     getCartSummary 
   } = useCart();
 
-  // Current user and date - updated with the newest provided values
-  const currentUser = "megafemworld";
-  const currentDate = "2025-03-09 20:17:18";
 
   // Get cart summary
   const { itemCount: cartCount, total: cartTotal } = getCartSummary();
